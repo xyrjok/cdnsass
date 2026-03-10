@@ -6,8 +6,3 @@ pages_build_output_dir = "dist"
 
 # 兼容性日期（填今天的日期即可，保证使用最新的 V8 引擎特性）
 compatibility_date = "2024-03-10"
-
-# 绑定 KV 数据库
-[[kv_namespaces]]
-binding = "kv"  # 这是你在 _worker.js 代码里调用 KV 的变量名
-id = ""
