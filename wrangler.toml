@@ -8,6 +8,6 @@ pages_build_output_dir = "dist"
 compatibility_date = "2024-03-10"
 
 # 绑定 KV 数据库
-# [[kv_namespaces]]
-# binding = "kv"  # 这是你在 _worker.js 代码里调用 KV 的变量名
-# id = ""
+[[kv_namespaces]]
+binding = "kv"  # 这是你在 _worker.js 代码里调用 KV 的变量名
+id = ""
