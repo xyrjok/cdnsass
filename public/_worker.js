@@ -3,43 +3,38 @@ export default {
     const url = new URL(request.url);
     const hostname = url.hostname;
 
-    if (url.pathname === '/api/tenant') {
+    // 将 API 名字改为 site-info，更符合个人站点的语义
+    if (url.pathname === '/api/site-info') {
       try {
-        // 1. 检查 KV 是否成功绑定！
         if (!env.kv) {
-           // 如果没有绑定，返回一段 JSON 提示，而不是让系统崩溃
            return new Response(JSON.stringify({ 
              id: "ERROR", 
-             name: "系统错误：未能连接到数据库 (kv 未绑定)", 
-             theme: "light" 
+             name: "系统错误：数据库未绑定", 
            }), { headers: { 'Content-Type': 'application/json' } });
         }
 
-        // 2. 正常查询数据库
-        let tenantDataStr = await env.kv.get(hostname);
+        let siteDataStr = await env.kv.get(hostname);
         
-        let tenant;
-        if (tenantDataStr) {
-          tenant = JSON.parse(tenantDataStr);
+        let siteConfig;
+        if (siteDataStr) {
+          siteConfig = JSON.parse(siteDataStr);
         } else {
-          tenant = { id: "000", name: "SaaS 平台主站 - 查无此域名", theme: "light" };
+          // 找不到当前域名的配置时，显示的默认个人主站信息
+          siteConfig = { id: "MAIN-00", name: "个人主控台 - 等待域名接入" };
         }
 
-        return new Response(JSON.stringify(tenant), {
+        return new Response(JSON.stringify(siteConfig), {
           headers: { 'Content-Type': 'application/json' }
         });
 
       } catch (err) {
-        // 3. 捕获任何其他代码错误
         return new Response(JSON.stringify({ 
           id: "ERROR", 
-          name: "后端抛出异常: " + err.message, 
-          theme: "light" 
+          name: "环境异常: " + err.message, 
         }), { headers: { 'Content-Type': 'application/json' } });
       }
     }
 
-    // 其他静态资源请求放行
     return env.ASSETS.fetch(request);
   }
 };
