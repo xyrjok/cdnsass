@@ -1,144 +1,139 @@
 <template>
-  <div class="app-layout">
-    <Header :siteName="siteConfig.name" />
-    <div class="main-body">
-      <Aside v-model="activeTab" />
-      <Main>
-        <div class="saas-content">
-          
-          <div v-if="activeTab === 'overview'">
-            <h1>👋 欢迎回来，这是【{{ siteConfig.name }}】</h1>
-            <p>当前分发域名: <strong style="color: #20a0ff;">{{ currentHost }}</strong></p>
-            <p>空间标识ID: {{ siteConfig.id }}</p>
-            <hr />
-            <div style="display: flex; gap: 20px; margin-top: 20px;">
-              <div class="data-card">总访问量<br/><h3>1,024</h3></div>
-            </div>
-          </div>
-
-          <div v-if="activeTab === 'content'">
-            <h1>内容管理</h1>
-            <hr />
-            <p>在这里管理当前域名下的内容。</p>
-          </div>
-
-          <div v-if="activeTab === 'settings'">
-            <h1>系统设置与空间管理</h1>
-            <hr />
-            
-            <div class="admin-section">
-              <h3>🎨 当前空间设置</h3>
-              <p style="color: #666; font-size: 14px;">修改当前访问域名的显示名称。</p>
-              <div style="margin-top: 10px;">
-                <input type="text" v-model="siteConfig.name" class="input-box" />
-                <button class="mock-btn" style="margin-left: 10px;" @click="updateCurrentSite">保存修改</button>
-              </div>
-            </div>
-
-            <div class="admin-section" style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px;">
-              <h3>🚀 开通全新的分发空间 (写入数据库)</h3>
-              <p style="color: #666; font-size: 14px;">在这里添加你的新域名，数据将直接持久化到 Cloudflare KV 数据库中。</p>
-              
-              <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; max-width: 400px;">
-                <div>
-                  <label>要接入的子域名：</label><br/>
-                  <input type="text" v-model="newSite.domain" placeholder="例如: img.yourdomain.com" class="input-box" style="width: 100%;" />
-                </div>
-                <div>
-                  <label>空间名称：</label><br/>
-                  <input type="text" v-model="newSite.siteName" placeholder="例如: 我的云端图床" class="input-box" style="width: 100%;" />
-                </div>
-                <div>
-                  <label>空间 ID：</label><br/>
-                  <input type="text" v-model="newSite.siteId" placeholder="例如: IMG-001" class="input-box" style="width: 100%;" />
-                </div>
-                
-                <button class="mock-btn" style="background: #67c23a; margin-top: 10px;" @click="createNewSite" :disabled="isSaving">
-                  {{ isSaving ? '正在写入数据库...' : '确认开通新空间' }}
-                </button>
-              </div>
-            </div>
-
-          </div>
-
+  <el-container class="app-layout">
+    <el-aside width="260px" style="height: 100vh;">
+      <Aside v-model="activeTab" :siteName="siteConfig.name" />
+    </el-aside>
+    
+    <el-container style="background: var(--base-fill);">
+      <el-header class="custom-header">
+        <div class="header-left">
+          <span style="font-weight: bold; font-size: 16px;">{{ currentHost }} 分发节点</span>
         </div>
-      </Main>
-    </div>
-  </div>
+        <div class="header-right">
+          <div class="icon-item" @click="toggleDark">
+            <Icon :icon="isDark ? 'mingcute:sun-fill' : 'solar:moon-linear'" width="22" height="22" />
+          </div>
+          <div class="avatar">
+            <div class="avatar-text">Admin</div>
+          </div>
+        </div>
+      </el-header>
+      
+      <el-main>
+        <div class="content-card">
+          <div v-if="activeTab === 'overview'">
+             <h2 style="margin-bottom: 20px;">欢迎回到数据中心</h2>
+             <el-row :gutter="20">
+               <el-col :span="8"><el-card shadow="hover"><h3>节点 ID</h3><p style="color: #1890ff; font-size: 20px; margin-top: 10px;">{{ siteConfig.id }}</p></el-card></el-col>
+               <el-col :span="8"><el-card shadow="hover"><h3>总访问量</h3><p style="font-size: 20px; margin-top: 10px;">1,024</p></el-card></el-col>
+             </el-row>
+          </div>
+          <div v-if="activeTab === 'content'">
+             <h2 style="margin-bottom: 20px;">分发资源管理</h2>
+             <el-empty description="暂无资源，点击上传" />
+          </div>
+          <div v-if="activeTab === 'settings'">
+             <h2 style="margin-bottom: 20px;">空间设置 (直连 KV)</h2>
+             <el-form label-width="100px" style="max-width: 400px;">
+               <el-form-item label="当前空间名">
+                 <el-input v-model="siteConfig.name" />
+               </el-form-item>
+               <el-form-item>
+                 <el-button type="primary" @click="updateCurrentSite">保存修改</el-button>
+               </el-form-item>
+             </el-form>
+             <el-divider border-style="dashed" />
+             <h3 style="margin: 20px 0;">🚀 开通新子域名</h3>
+             <el-form label-width="100px" style="max-width: 400px;">
+                <el-form-item label="子域名"><el-input v-model="newSite.domain" placeholder="img.yourdomain.com" /></el-form-item>
+                <el-form-item label="空间名称"><el-input v-model="newSite.siteName" /></el-form-item>
+                <el-form-item label="空间 ID"><el-input v-model="newSite.siteId" /></el-form-item>
+                <el-form-item>
+                  <el-button type="success" :loading="isSaving" @click="createNewSite">立即开通</el-button>
+                </el-form-item>
+             </el-form>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
+  </el-container>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import Header from './layout/header/index.vue';
+import { Icon } from '@iconify/vue';
 import Aside from './layout/aside/index.vue';
-import Main from './layout/main/index.vue';
+import { ElMessage } from 'element-plus';
 
-const siteConfig = ref({ name: '系统加载中...' });
+const siteConfig = ref({ name: '加载中...', id: '' });
 const currentHost = ref(window.location.hostname);
 const activeTab = ref('overview');
-
-// 绑定开通新空间表单的数据
 const newSite = ref({ domain: '', siteName: '', siteId: '' });
 const isSaving = ref(false);
+const isDark = ref(false);
 
 onMounted(async () => {
   try {
     const res = await fetch('/api/site-info');
     siteConfig.value = await res.json();
     document.title = siteConfig.value.name;
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 });
 
-// 修改当前站点 (复用新增接口)
-const updateCurrentSite = async () => {
-  await submitToKV(currentHost.value, siteConfig.value.name, siteConfig.value.id);
-  document.title = siteConfig.value.name;
-};
-
-// 开通新站点
-const createNewSite = async () => {
-  if(!newSite.value.domain || !newSite.value.siteName) {
-    alert("请填写域名和空间名称！");
+// 原版极其酷炫的日夜切换动画逻辑
+const toggleDark = (e) => {
+  const nextIsDark = !isDark.value;
+  const root = document.documentElement;
+  
+  if (!document.startViewTransition) {
+    root.classList.toggle('dark', nextIsDark);
+    isDark.value = nextIsDark;
     return;
   }
+
+  const x = e.clientX; const y = e.clientY;
+  const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  
+  root.setAttribute('data-theme-to', nextIsDark ? 'dark' : 'light');
+  root.style.setProperty('--vt-x', `${x}px`);
+  root.style.setProperty('--vt-y', `${y}px`);
+  root.style.setProperty('--vt-end-radius', `${endRadius + 10}px`);
+
+  const transition = document.startViewTransition(() => {
+    root.classList.toggle('dark', nextIsDark);
+    isDark.value = nextIsDark;
+  });
+  transition.finished.finally(() => { root.removeAttribute('data-theme-to'); });
+};
+
+const updateCurrentSite = async () => { await submitToKV(currentHost.value, siteConfig.value.name, siteConfig.value.id); };
+const createNewSite = async () => {
+  if(!newSite.value.domain || !newSite.value.siteName) return ElMessage.warning("请填写完整信息");
   await submitToKV(newSite.value.domain, newSite.value.siteName, newSite.value.siteId);
-  // 清空表单
   newSite.value = { domain: '', siteName: '', siteId: '' };
 };
 
-// 核心封装：发起 POST 请求给 Worker
 const submitToKV = async (domain, siteName, siteId) => {
   isSaving.value = true;
   try {
     const response = await fetch('/api/add-site', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain, siteName, siteId })
     });
     const result = await response.json();
-    if(result.success) {
-      alert("✅ " + result.msg + "\n数据已永久写入 Cloudflare KV 节点。");
-    } else {
-      alert("❌ 写入失败：" + result.msg);
-    }
-  } catch(e) {
-    alert("网络请求失败：" + e.message);
-  } finally {
-    isSaving.value = false;
-  }
+    if(result.success) ElMessage.success(result.msg);
+    else ElMessage.error(result.msg);
+  } catch(e) { ElMessage.error("请求失败"); } 
+  finally { isSaving.value = false; }
 };
 </script>
 
 <style scoped>
-.app-layout { display: flex; flex-direction: column; height: 100vh; }
-.main-body { display: flex; flex: 1; overflow: hidden; }
-.saas-content { padding: 20px; background: white; border-radius: 8px; margin: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; overflow-y: auto; }
-.mock-btn { padding: 10px 15px; background: #20a0ff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; }
-.mock-btn:hover { opacity: 0.8; }
-.mock-btn:disabled { background: #909399; cursor: not-allowed; }
-.data-card { background: #f4f4f5; padding: 20px; border-radius: 6px; width: 150px; text-align: center; color: #606266; }
-.input-box { padding: 8px; border: 1px solid #dcdfe6; border-radius: 4px; outline: none; transition: 0.2s;}
-.input-box:focus { border-color: #20a0ff; }
+.app-layout { height: 100vh; }
+.custom-header { background: var(--el-bg-color); border-bottom: 1px solid var(--light-border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 60px;}
+.header-right { display: flex; align-items: center; gap: 20px; }
+.icon-item { cursor: pointer; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; transition: 0.2s;}
+.icon-item:hover { background: var(--base-fill); }
+.avatar-text { background: var(--base-fill); padding: 5px 12px; border-radius: 8px; border: 1px solid var(--dark-border); font-weight: bold; font-size: 13px; cursor: pointer;}
+.content-card { background: var(--el-bg-color); border-radius: 8px; padding: 24px; min-height: calc(100vh - 100px); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 </style>
