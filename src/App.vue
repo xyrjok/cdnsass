@@ -1,6 +1,6 @@
 <template>
   <div class="app-layout">
-    <Header :siteName="tenant.name" />
+    <Header :siteName="siteConfig.name" />
     <div class="main-body">
       
       <Aside v-model="activeTab" />
@@ -8,31 +8,50 @@
       <Main>
         <div class="saas-content">
           
-          <div v-if="activeTab === 'dashboard'">
-            <h1>欢迎来到 {{ tenant.name }}</h1>
-            <p>当前访问域名: <strong>{{ currentHost }}</strong></p>
-            <p>租户编号: {{ tenant.id }}</p>
+          <div v-if="activeTab === 'overview'">
+            <h1>👋 欢迎回来，这是【{{ siteConfig.name }}】</h1>
+            <p>当前分发域名: <strong style="color: #20a0ff;">{{ currentHost }}</strong></p>
+            <p>空间标识ID: {{ siteConfig.id }}</p>
             <hr />
-            <p style="color: #666; margin-top: 20px;">这里是仪表盘：可以展示今日订单量、访问量等统计数据。</p>
+            <div style="display: flex; gap: 20px; margin-top: 20px;">
+              <div class="data-card">总访问量<br/><h3>1,024</h3></div>
+              <div class="data-card">已发布内容<br/><h3>42</h3></div>
+              <div class="data-card">云端存储<br/><h3>1.5 GB</h3></div>
+            </div>
           </div>
 
-          <div v-if="activeTab === 'business'">
-            <h1>业务管理</h1>
+          <div v-if="activeTab === 'content'">
+            <h1>内容管理</h1>
             <hr />
-            <p style="color: #666;">这里是业务管理页面。你可以放一个商品列表，或者分类管理的表格。</p>
-            <button class="mock-btn">添加新商品 / 业务</button>
+            <p style="color: #666;">在这里管理当前域名下的图片、文章或分发资源。</p>
+            <button class="mock-btn" @click="showAlert('准备打开文件上传器...')">上传新内容</button>
+            <button class="mock-btn" style="background: #67c23a; margin-left: 10px;" @click="showAlert('准备写新文章...')">新建图文</button>
           </div>
 
           <div v-if="activeTab === 'settings'">
-            <h1>系统设置</h1>
+            <h1>站点设置</h1>
             <hr />
-            <p style="color: #666;">这里是系统设置。租户可以在这里修改他们的店铺参数。</p>
+            <p style="color: #666;">配置当前个人专属站点的基础参数。</p>
+            
             <div style="margin-top: 20px;">
-              <label>店铺名称：</label>
-              <input type="text" :value="tenant.name" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 250px;" />
+              <label>站点名称：</label>
+              <input 
+                type="text" 
+                v-model="siteConfig.name" 
+                style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 250px;" 
+              />
             </div>
+
             <div style="margin-top: 15px;">
-              <button class="mock-btn">保存设置</button>
+              <label>主题色调：</label>
+              <select style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;">
+                <option>浅色模式</option>
+                <option>深色模式</option>
+              </select>
+            </div>
+            
+            <div style="margin-top: 25px;">
+              <button class="mock-btn" @click="saveSettings">保存配置</button>
             </div>
           </div>
 
@@ -48,28 +67,39 @@ import Header from './layout/header/index.vue';
 import Aside from './layout/aside/index.vue';
 import Main from './layout/main/index.vue';
 
-const tenant = ref({ name: '加载中...' });
+// 变量名从 tenant 改为 siteConfig (站点配置)
+const siteConfig = ref({ name: '系统加载中...' });
 const currentHost = ref(window.location.hostname);
-
-// 定义一个变量记录当前选中的页面，默认显示 'dashboard' (仪表盘)
-const activeTab = ref('dashboard');
+const activeTab = ref('overview');
 
 onMounted(async () => {
   try {
-    const res = await fetch('/api/tenant');
-    tenant.value = await res.json();
-    document.title = tenant.value.name;
+    // 请求新的接口地址
+    const res = await fetch('/api/site-info');
+    siteConfig.value = await res.json();
+    document.title = siteConfig.value.name;
   } catch(e) {
     console.error(e);
   }
 });
+
+const showAlert = (msg) => {
+  alert(msg);
+};
+
+const saveSettings = () => {
+  const newName = siteConfig.value.name;
+  alert(`保存成功！\n当前空间名称已更新为：【${newName}】\n\n(注意：前端展示已生效，但写入 KV 数据库的接口待后续开发)`);
+  document.title = newName;
+};
 </script>
 
 <style scoped>
 .app-layout { display: flex; flex-direction: column; height: 100vh; }
 .main-body { display: flex; flex: 1; overflow: hidden; }
 .saas-content { padding: 20px; background: white; border-radius: 8px; margin: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; overflow-y: auto; }
-/* 模拟按钮的简单样式 */
 .mock-btn { padding: 10px 15px; background: #20a0ff; color: white; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; }
-.mock-btn:hover { background: #1c8ce0; }
+.mock-btn:hover { opacity: 0.8; }
+.data-card { background: #f4f4f5; padding: 20px; border-radius: 6px; width: 150px; text-align: center; color: #606266; }
+.data-card h3 { color: #303133; margin: 10px 0 0 0; font-size: 24px;}
 </style>
