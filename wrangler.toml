@@ -1,8 +1,0 @@
-# 项目名称
-name = "cdnsass"
-
-# 告诉 Cloudflare Pages 打包后的输出目录是 dist
-pages_build_output_dir = "dist"
-
-# 兼容性日期（填今天的日期即可，保证使用最新的 V8 引擎特性）
-compatibility_date = "2024-03-10"
